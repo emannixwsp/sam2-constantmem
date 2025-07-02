@@ -624,7 +624,7 @@ class SAM2VideoPredictor(SAM2Base):
                     obj_output_dict[storage_key].pop(old_idx)
                     for obj_id in inference_state[obj_key].keys():
                         inference_state[obj_key][obj_id][storage_key].pop(old_idx, None)
-                torch.cuda.empty_cache()
+                # torch.cuda.empty_cache()
                 # pb()
                 # print('using this code')
 
