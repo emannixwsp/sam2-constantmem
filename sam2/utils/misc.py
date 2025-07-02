@@ -141,6 +141,7 @@ class AsyncVideoFrameLoader:
             except Exception as e:
                 self.exception = e
 
+        # https://github.com/facebookresearch/sam2/issues/264#issuecomment-2315805429
         self.thread = Thread(target=_load_frames, daemon=True)
         self.thread.start()
 
@@ -150,6 +151,7 @@ class AsyncVideoFrameLoader:
 
         img = self.images[index]
         if img is not None:
+            self.images[index] = None
             return img
 
         img, video_height, video_width = _load_img_as_tensor(

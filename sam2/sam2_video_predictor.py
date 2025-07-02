@@ -15,6 +15,7 @@ from tqdm import tqdm
 from sam2.modeling.sam2_base import NO_OBJ_SCORE, SAM2Base
 from sam2.utils.misc import concat_points, fill_holes_in_mask_scores, load_video_frames
 
+from pdb import set_trace as pb
 
 class SAM2VideoPredictor(SAM2Base):
     """The predictor class to handle user interactions and manage inference states."""
@@ -612,6 +613,20 @@ class SAM2VideoPredictor(SAM2Base):
                         run_mem_encoder=True,
                     )
                     obj_output_dict[storage_key][frame_idx] = current_out
+
+                # https://github.com/facebookresearch/sam2/pull/655/commits/5fb0307cfab6e8bcc67bd860bc23fe51fafe6525
+                # Delete old state data to clear space
+                storage_key, obj_key = "non_cond_frame_outputs", "output_dict_per_obj"
+                oldest_allowed_idx = frame_idx - 32
+                all_frame_idxs = obj_output_dict[storage_key].keys()
+                old_frame_idxs = [idx for idx in all_frame_idxs if idx < oldest_allowed_idx]
+                for old_idx in old_frame_idxs:
+                    obj_output_dict[storage_key].pop(old_idx)
+                    for obj_id in inference_state[obj_key].keys():
+                        inference_state[obj_key][obj_id][storage_key].pop(old_idx, None)
+                torch.cuda.empty_cache()
+                # pb()
+                # print('using this code')
 
                 inference_state["frames_tracked_per_obj"][obj_idx][frame_idx] = {
                     "reverse": reverse
