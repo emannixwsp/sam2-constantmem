@@ -117,6 +117,8 @@ class AsyncVideoFrameLoader:
         img_mean,
         img_std,
         compute_device,
+        start_frame = 0,
+        reverse=False
     ):
         self.img_paths = img_paths
         self.image_size = image_size
@@ -139,8 +141,12 @@ class AsyncVideoFrameLoader:
         # load the rest of frames asynchronously without blocking the session start
         def _load_frames():
             try:
-                for n in tqdm(range(len(self.images)), desc="frame loading (JPEG)"):
-                    self.__getitem__(n)
+                if reverse:
+                    for n in tqdm(range(start_frame, -1, -1), desc="frame loading (JPEG)"):
+                        self.__getitem__(n)
+                else:
+                    for n in tqdm(range(start_frame, len(self.images)), desc="frame loading (JPEG)"):
+                        self.__getitem__(n)
             except Exception as e:
                 self.exception = e
 
@@ -161,7 +167,7 @@ class AsyncVideoFrameLoader:
         else:
             count = sum(1 for x in self.images if x is not None)
             if count > 100:
-                time.sleep(0.1)
+                time.sleep(1.0)
 
 
         img, video_height, video_width = _load_img_as_tensor(
@@ -189,6 +195,8 @@ def load_video_frames(
     img_std=(0.229, 0.224, 0.225),
     async_loading_frames=False,
     compute_device=torch.device("cuda"),
+    start_frame=0,
+    reverse=False
 ):
     """
     Load the video frames from video_path. The frames are resized to image_size as in
@@ -215,6 +223,8 @@ def load_video_frames(
             img_std=img_std,
             async_loading_frames=async_loading_frames,
             compute_device=compute_device,
+            start_frame=start_frame,
+            reverse=reverse
         )
     else:
         raise NotImplementedError(
@@ -230,6 +240,8 @@ def load_video_frames_from_jpg_images(
     img_std=(0.229, 0.224, 0.225),
     async_loading_frames=False,
     compute_device=torch.device("cuda"),
+    start_frame = 0,
+    reverse=False
 ):
     """
     Load the video frames from a directory of JPEG files ("<frame_index>.jpg" format).
@@ -273,6 +285,8 @@ def load_video_frames_from_jpg_images(
             img_mean,
             img_std,
             compute_device,
+            start_frame=start_frame,
+            reverse=reverse
         )
         return lazy_images, lazy_images.video_height, lazy_images.video_width
 

@@ -46,6 +46,8 @@ class SAM2VideoPredictor(SAM2Base):
         offload_video_to_cpu=False,
         offload_state_to_cpu=False,
         async_loading_frames=False,
+        start_frame = 0,
+        reverse=False
     ):
         """Initialize an inference state."""
         compute_device = self.device  # device of the model
@@ -55,6 +57,8 @@ class SAM2VideoPredictor(SAM2Base):
             offload_video_to_cpu=offload_video_to_cpu,
             async_loading_frames=async_loading_frames,
             compute_device=compute_device,
+            start_frame=start_frame,
+            reverse=reverse
         )
         inference_state = {}
         inference_state["images"] = images
@@ -617,9 +621,15 @@ class SAM2VideoPredictor(SAM2Base):
                 # https://github.com/facebookresearch/sam2/pull/655/commits/5fb0307cfab6e8bcc67bd860bc23fe51fafe6525
                 # Delete old state data to clear space
                 storage_key, obj_key = "non_cond_frame_outputs", "output_dict_per_obj"
-                oldest_allowed_idx = frame_idx - 1024
-                all_frame_idxs = obj_output_dict[storage_key].keys()
-                old_frame_idxs = [idx for idx in all_frame_idxs if idx < oldest_allowed_idx]
+                if reverse == False:
+                    oldest_allowed_idx = frame_idx - 1024
+                    all_frame_idxs = obj_output_dict[storage_key].keys()
+                    old_frame_idxs = [idx for idx in all_frame_idxs if idx < oldest_allowed_idx]
+                else:
+                    oldest_allowed_idx = frame_idx + 1024
+                    all_frame_idxs = obj_output_dict[storage_key].keys()
+                    old_frame_idxs = [idx for idx in all_frame_idxs if idx > oldest_allowed_idx]
+
                 for old_idx in old_frame_idxs:
                     obj_output_dict[storage_key].pop(old_idx)
                     for obj_id in inference_state[obj_key].keys():
